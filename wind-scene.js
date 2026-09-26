@@ -24,6 +24,7 @@ function seedScene(w,h){
 function compassName(deg){const n=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];return n[Math.round((deg%360)/22.5)%16]}
 function windStrength(v){if(v<5)return'Calm';if(v<20)return'Light breeze';if(v<39)return'Moderate breeze';if(v<62)return'Strong breeze';if(v<89)return'Gale';return'Storm-force wind'}
 function downwindVector(){const a=(windDir+180)*Math.PI/180;return{x:Math.sin(a),y:-Math.cos(a)}}
+
 function drawSky(w,h){
   const c=isDay?['#6fb4e8','#d9efff','#f3d6a4']:['#06101d','#132640','#263a53'],g=ctx.createLinearGradient(0,0,0,h*.72);
   g.addColorStop(0,c[0]);g.addColorStop(.66,c[1]);g.addColorStop(1,c[2]);ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
@@ -35,8 +36,8 @@ function drawSky(w,h){
   }
 }
 function cloudPos(c,w,h,t){
-  const d=downwindVector(),speed=Math.max(3.2,wind*.16),dx=t*speed*.003*d.x,band=Math.max(85,h*.15);
-  return{x:((c.x+dx)%(w+360)+w+360)%(w+360)-180,y:36+((c.y-36+Math.sin(t*.00018+c.p)*5)%band+band)%band}
+  const d=downwindVector(),speed=Math.max(8,wind*.30),dx=t*speed*.0034*d.x,band=Math.max(85,h*.15);
+  return{x:((c.x+dx)%(w+360)+w+360)%(w+360)-180,y:36+((c.y-36+Math.sin(t*.0003+c.p)*6)%band+band)%band}
 }
 function fillCloudEllipse(x,y,rx,ry){ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fill()}
 function drawClouds(w,h,t){
@@ -57,27 +58,27 @@ function drawField(w,h){
 }
 
 function houseLayout(w,h){
-  const ground=h*.88;
-  const ratio=houseImg.naturalWidth&&houseImg.naturalHeight?houseImg.naturalWidth/houseImg.naturalHeight:1.78;
-  const width=Math.min(w*.50,h*1.42);
-  const height=width/ratio;
-  const x=Math.max(4,w*.025);
+  const ground=h*.835;
+  const ratio=houseImg.naturalWidth&&houseImg.naturalHeight?houseImg.naturalWidth/houseImg.naturalHeight:1.33;
+  const width=Math.min(w*.53,h*1.48);
+  const visibleRatio=.78;
+  const height=width/ratio*visibleRatio;
+  const x=Math.max(2,w*.018);
   const y=ground-height;
-  return{x,y,width,height,ground}
+  return{x,y,width,height,ground,visibleRatio}
 }
 function drawHouseAsset(w,h,t){
   if(!houseImg.complete||!houseImg.naturalWidth)return;
-  const L=houseLayout(w,h);
+  const L=houseLayout(w,h),sourceH=Math.floor(houseImg.naturalHeight*L.visibleRatio);
   ctx.save();
-  ctx.fillStyle='rgba(0,0,0,.14)';
-  ctx.beginPath();ctx.ellipse(L.x+L.width*.50,L.ground+8,L.width*.43,15,0,0,Math.PI*2);ctx.fill();
-  ctx.drawImage(houseImg,L.x,L.y,L.width,L.height);
+  ctx.fillStyle='rgba(0,0,0,.16)';ctx.beginPath();ctx.ellipse(L.x+L.width*.50,L.ground+2,L.width*.39,11,0,0,Math.PI*2);ctx.fill();
+  ctx.drawImage(houseImg,0,0,houseImg.naturalWidth,sourceH,L.x,L.y,L.width,L.height);
   ctx.restore();
-  const s=Math.max(.76,Math.min(1.18,L.width/720));
-  drawMailbox(L.x+L.width+72*s,L.ground+28*s,s,t)
+  const s=Math.max(.78,Math.min(1.2,L.width/720));
+  drawMailbox(L.x+L.width+66*s,L.ground+18*s,s,t)
 }
 function drawMailbox(x,y,scale,t){
-  const d=downwindVector(),flagWiggle=Math.sin(t*.0025)*.10+d.x*Math.min(.05,wind*.0013);
+  const d=downwindVector(),idle=Math.sin(t*.0032)*.055,flagWiggle=idle+d.x*Math.min(.12,.025+wind*.0025);
   ctx.save();
   ctx.strokeStyle=isDay?'#5c4530':'#342a21';ctx.lineWidth=7*scale;ctx.lineCap='round';
   ctx.beginPath();ctx.moveTo(x,y+24*scale);ctx.lineTo(x,y-78*scale);ctx.stroke();
@@ -88,15 +89,17 @@ function drawMailbox(x,y,scale,t){
   ctx.fillStyle=isDay?'#47653b':'#263828';ctx.beginPath();ctx.ellipse(x,y+24*scale,22*scale,9*scale,0,0,Math.PI*2);ctx.fill();
   ctx.restore()
 }
+
 function drawTree(w,h,t){
-  const ground=h*.79,x=w*.76,scale=Math.max(.78,Math.min(1.32,w/1100)),d=downwindVector(),sway=d.x*Math.min(12,wind*.28)+Math.sin(t*.0008)*2;
+  const ground=h*.79,x=w*.76,scale=Math.max(.78,Math.min(1.32,w/1100)),d=downwindVector();
+  const windLean=d.x*Math.min(13,Math.max(3.2,wind*.32));
+  const idle=Math.sin(t*.00135)*5.1+Math.sin(t*.00052+1.2)*1.9;
+  const sway=windLean+idle;
   ctx.save();ctx.translate(x,ground);ctx.fillStyle=isDay?'#5a3f2b':'#2b241d';
   ctx.beginPath();ctx.moveTo(-25*scale,5);ctx.bezierCurveTo(-19*scale,-70*scale,-18*scale,-135*scale,sway*scale,-210*scale);
   ctx.bezierCurveTo(18*scale,-140*scale,24*scale,-62*scale,31*scale,5);ctx.closePath();ctx.fill();
   ctx.strokeStyle=isDay?'#65462f':'#31271f';ctx.lineCap='round';ctx.lineWidth=13*scale;
-  for(const b of[[0,-155,-70,-215],[4,-145,76,-198],[-3,-178,-40,-245],[8,-170,55,-240]]){
-    ctx.beginPath();ctx.moveTo((b[0]+sway*.3)*scale,b[1]*scale);ctx.lineTo((b[2]+sway)*scale,b[3]*scale);ctx.stroke()
-  }
+  for(const b of[[0,-155,-70,-215],[4,-145,76,-198],[-3,-178,-40,-245],[8,-170,55,-240]]){ctx.beginPath();ctx.moveTo((b[0]+sway*.3)*scale,b[1]*scale);ctx.lineTo((b[2]+sway)*scale,b[3]*scale);ctx.stroke()}
   const canopyY=-238*scale,lean=sway*1.7*scale;ctx.fillStyle=isDay?'#477f3e':'#25462e';
   for(const c of[[-68,-2,76,54],[-8,-34,92,67],[72,-6,72,55],[-26,30,90,58]]){ctx.beginPath();ctx.ellipse(c[0]*scale+lean,canopyY+c[1]*scale,c[2]*scale,c[3]*scale,0,0,Math.PI*2);ctx.fill()}
   ctx.fillStyle=isDay?'#5f9851':'#31583a';
@@ -104,14 +107,17 @@ function drawTree(w,h,t){
   ctx.restore();drawTreeLeaves(w,h,t,x,ground-238*scale,scale)
 }
 function drawTreeLeaves(w,h,t,treeX,treeY,scale){
-  const d=downwindVector(),target=Math.min(24,Math.max(3,Math.floor(wind*.55)));
-  if(leafParticles.length<target&&Math.random()<.22)leafParticles.push({x:treeX+(Math.random()-.5)*150*scale,y:treeY+(Math.random()-.5)*80*scale,v:.5+Math.random(),rot:Math.random()*6.28,life:0,sz:(3+Math.random()*4)*scale});
+  const d=downwindVector(),target=Math.min(30,Math.max(8,Math.floor(wind*.7)+6));
+  if(leafParticles.length<target&&Math.random()<.40)leafParticles.push({x:treeX+(Math.random()-.5)*150*scale,y:treeY+(Math.random()-.5)*80*scale,v:.5+Math.random(),rot:Math.random()*6.28,life:0,sz:(3+Math.random()*4)*scale});
   for(const p of leafParticles){
-    p.x+=d.x*(.7+wind*.035)*p.v;p.y+=d.y*(.25+wind*.012)*p.v+(.18+.18*p.v);p.rot+=.05*p.v;p.life++;
+    p.x+=d.x*(.82+Math.max(3,wind)*.045)*p.v+Math.sin(t*.0022+p.rot)*.14;
+    p.y+=d.y*(.30+Math.max(3,wind)*.017)*p.v+(.16+.14*p.v)+Math.cos(t*.0019+p.rot)*.04;
+    p.rot+=.055*p.v;p.life++;
     ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot);ctx.fillStyle=isDay?'#6f9148':'#405234';ctx.beginPath();ctx.ellipse(0,0,p.sz,p.sz*.45,0,0,Math.PI*2);ctx.fill();ctx.restore()
   }
   leafParticles=leafParticles.filter(p=>p.x>-80&&p.x<w+80&&p.y>-80&&p.y<h+80&&p.life<900)
 }
+
 function kiteCount(){if(!isDay||wind<4||wind>45)return 0;if(wind<9)return 1;if(wind<23)return 2;return 3}
 function drawKiteBow(x,y,angle,size,c){
   ctx.save();ctx.translate(x,y);ctx.rotate(angle);ctx.fillStyle=c;ctx.strokeStyle='rgba(50,45,40,.55)';ctx.lineWidth=.7;
@@ -122,43 +128,34 @@ function drawKites(w,h,t){
   const count=kiteCount(),d=downwindVector(),gustBoost=Math.min(1,Math.max(0,gust-wind)/18),heading=Math.atan2(d.y,d.x)+Math.PI/2;
   for(let i=0;i<count;i++){
     const k=kites[i],anchorX=w*(k.x-.07),anchorY=h*.84,baseX=w*k.x,baseY=h*k.y-wind*.78,
-      bob=Math.sin(t*.0017+k.p)*(6+wind*.12),swayX=d.x*(16+wind*.95)+Math.sin(t*.0011+k.p)*6*(1+gustBoost),swayY=d.y*(5+wind*.22),x=baseX+swayX,y=baseY+bob+swayY,
-      size=23+Math.min(7,wind*.16);
-
+      bob=Math.sin(t*.0017+k.p)*(6+wind*.12),swayX=d.x*(16+wind*.95)+Math.sin(t*.0011+k.p)*6*(1+gustBoost),swayY=d.y*(5+wind*.22),x=baseX+swayX,y=baseY+bob+swayY,size=23+Math.min(7,wind*.16);
     ctx.strokeStyle=isDay?'rgba(255,255,255,.72)':'rgba(220,225,235,.4)';ctx.lineWidth=1.15;
     ctx.beginPath();ctx.moveTo(anchorX,anchorY);ctx.quadraticCurveTo((anchorX+x)*.52-d.x*24,anchorY-95-wind*1.1,x,y+size*.72);ctx.stroke();
-
-    ctx.save();ctx.translate(x,y);ctx.rotate(heading+Math.sin(t*.0019+k.p)*.055);
-    ctx.shadowColor='rgba(0,0,0,.18)';ctx.shadowBlur=4;
-    ctx.strokeStyle='rgba(55,48,43,.72)';ctx.lineWidth=1.4;
+    ctx.save();ctx.translate(x,y);ctx.rotate(heading+Math.sin(t*.0019+k.p)*.055);ctx.shadowColor='rgba(0,0,0,.18)';ctx.shadowBlur=4;ctx.strokeStyle='rgba(55,48,43,.72)';ctx.lineWidth=1.4;
     ctx.fillStyle=k.c1;ctx.beginPath();ctx.moveTo(0,-size);ctx.lineTo(size*.78,0);ctx.lineTo(0,size*1.02);ctx.lineTo(-size*.78,0);ctx.closePath();ctx.fill();ctx.stroke();
-    ctx.fillStyle=k.c2;ctx.beginPath();ctx.moveTo(0,-size);ctx.lineTo(size*.78,0);ctx.lineTo(0,0);ctx.closePath();ctx.fill();
-    ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,size*1.02);ctx.lineTo(-size*.78,0);ctx.closePath();ctx.fill();
+    ctx.fillStyle=k.c2;ctx.beginPath();ctx.moveTo(0,-size);ctx.lineTo(size*.78,0);ctx.lineTo(0,0);ctx.closePath();ctx.fill();ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,size*1.02);ctx.lineTo(-size*.78,0);ctx.closePath();ctx.fill();
     ctx.shadowBlur=0;ctx.strokeStyle='rgba(255,255,255,.58)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,-size*.92);ctx.lineTo(0,size*.94);ctx.moveTo(-size*.68,0);ctx.lineTo(size*.68,0);ctx.stroke();ctx.restore();
-
-    const tailStartX=x+d.x*size*.72,tailStartY=y+size*.92+d.y*size*.4,tailLen=92+Math.min(40,wind*1.2);
-    ctx.strokeStyle=k.c1;ctx.lineWidth=1.8;ctx.beginPath();
-    const pts=[];
-    for(let j=0;j<12;j++){
-      const q=j/11,side=Math.sin(t*.003+j*.85+k.p)*(5+q*3),tx=tailStartX+d.x*tailLen*q-d.y*side,ty=tailStartY+d.y*tailLen*q+q*36+d.x*side;
-      pts.push([tx,ty]);if(j===0)ctx.moveTo(tx,ty);else ctx.lineTo(tx,ty)
-    }
-    ctx.stroke();
-    const tailAngle=Math.atan2(d.y*tailLen+36,d.x*tailLen);
-    for(const j of[3,6,9]){const p=pts[j];drawKiteBow(p[0],p[1],tailAngle,5.5,k.c2)}
+    const tailStartX=x+d.x*size*.72,tailStartY=y+size*.92+d.y*size*.4,tailLen=92+Math.min(40,wind*1.2);ctx.strokeStyle=k.c1;ctx.lineWidth=1.8;ctx.beginPath();const pts=[];
+    for(let j=0;j<12;j++){const q=j/11,side=Math.sin(t*.003+j*.85+k.p)*(5+q*3),tx=tailStartX+d.x*tailLen*q-d.y*side,ty=tailStartY+d.y*tailLen*q+q*36+d.x*side;pts.push([tx,ty]);if(j===0)ctx.moveTo(tx,ty);else ctx.lineTo(tx,ty)}ctx.stroke();
+    const tailAngle=Math.atan2(d.y*tailLen+36,d.x*tailLen);for(const j of[3,6,9]){const p=pts[j];drawKiteBow(p[0],p[1],tailAngle,5.5,k.c2)}
   }
 }
+
 function drawNightParticles(w,h,t){
-  if(isDay)return;const strength=Math.max(1,wind),d=downwindVector();
-  if(particles.length<Math.min(40,8+strength))particles.push({x:Math.random()*w,y:h*.25+Math.random()*h*.62,v:.45+Math.random()*1.3,a:Math.random()*6.28,fire:wind<6&&Math.random()>.45,sz:3+Math.random()*4});
+  if(isDay)return;
+  const strength=Math.max(3,wind),d=downwindVector(),target=Math.min(40,18+Math.floor(strength*.8));
+  if(particles.length<target&&Math.random()<.38)particles.push({x:Math.random()*w,y:h*.28+Math.random()*h*.54,v:.45+Math.random()*1.2,a:Math.random()*6.28,fire:Math.random()>.18,sz:3+Math.random()*4});
   particles=particles.filter(p=>p.x>-90&&p.x<w+90&&p.y>-90&&p.y<h+90);
   for(const p of particles){
-    p.x+=d.x*strength*.028*p.v;p.y+=d.y*strength*.013*p.v;p.a+=.04*p.v;
-    if(p.fire){ctx.fillStyle='#eaff91';ctx.globalAlpha=.5+.4*Math.sin(t*.004+p.a);ctx.beginPath();ctx.arc(p.x,p.y,1.8,0,Math.PI*2);ctx.fill()}
-    else{ctx.save();ctx.translate(p.x,p.y);ctx.rotate(Math.atan2(d.y,d.x)+p.a*.12);ctx.fillStyle='#8a6a42bb';ctx.globalAlpha=.72;ctx.beginPath();ctx.ellipse(0,0,p.sz,2,0,Math.PI*2);ctx.fill();ctx.restore()}
+    p.x+=d.x*strength*.024*p.v+Math.sin(t*.002+p.a)*.22;
+    p.y+=d.y*strength*.011*p.v+Math.sin(t*.0026+p.a)*.12;
+    p.a+=.04*p.v;
+    if(p.fire){ctx.fillStyle='#eaff91';ctx.globalAlpha=.48+.42*Math.sin(t*.005+p.a);ctx.beginPath();ctx.arc(p.x,p.y,1.7+Math.sin(p.a)*.35,0,Math.PI*2);ctx.fill()}
+    else{ctx.save();ctx.translate(p.x,p.y);ctx.rotate(Math.atan2(d.y,d.x)+p.a*.12);ctx.fillStyle='#8a6a42bb';ctx.globalAlpha=.62;ctx.beginPath();ctx.ellipse(0,0,p.sz,2,0,Math.PI*2);ctx.fill();ctx.restore()}
   }
   ctx.globalAlpha=1
 }
+
 function draw(t){
   const r=stage.getBoundingClientRect(),w=r.width,h=r.height;ctx.clearRect(0,0,w,h);
   drawSky(w,h);drawClouds(w,h,t);drawField(w,h);drawHouseAsset(w,h,t);drawTree(w,h,t);drawKites(w,h,t);drawNightParticles(w,h,t);
