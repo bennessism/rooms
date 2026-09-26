@@ -51,9 +51,9 @@ function applyWindData(data,label,area){
   currentArea=area;
   currentLat=Number(data.latitude ?? currentLat);
   currentLon=Number(data.longitude ?? currentLon);
-  wind=Number(data.wind_speed_kmh ?? data.wind_speed_10m)||0;
-  gust=Number(data.wind_gusts_kmh ?? data.wind_gusts_10m)||wind;
-  windDir=Number(data.wind_direction_deg ?? data.wind_direction_10m)||0;
+  wind=Number(data.wind_speed_kmh)||0;
+  gust=Number(data.wind_gusts_kmh)||wind;
+  windDir=Number(data.wind_direction_deg)||0;
   isDay=typeof data.is_day==='boolean'?data.is_day:Number(data.is_day)===1;
   document.querySelector('meta[name="theme-color"]').content=isDay?'#76b7e8':'#07111f';
   refreshUI(data.time);
@@ -76,40 +76,18 @@ async function loadCachedWind(countryCode=countrySelect.value,locationId=locatio
     if(!data)throw new Error();
     applyWindData(data,labelFor(loc),areaFor(loc))
   }catch(e){
-    await loadLiveWind(loc.lat,loc.lon,labelFor(loc),areaFor(loc),false)
-  }
-}
-
-async function loadLiveWind(lat=currentLat,lon=currentLon,label=currentPlace,area=currentArea,setMode=true){
-  if(setMode)weatherSourceMode='live';
-  currentLat=lat;currentLon=lon;currentPlace=label;currentArea=area;
-  try{
-    const u=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m,is_day&wind_speed_unit=kmh&timezone=auto`;
-    const j=await fetch(u,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error();return r.json()});
-    applyWindData({...j.current,latitude:lat,longitude:lon},label,area)
-  }catch(e){
     summaryLine.textContent=currentArea+' · data unavailable'
   }
 }
 
 function refreshCurrentWind(){
-  if(weatherSourceMode==='cache')return loadCachedWind(countrySelect.value,locationSelect.value);
-  return loadLiveWind(currentLat,currentLon,currentPlace,currentArea,true)
-}
-
-function useBrowserLocation(){
-  if(!navigator.geolocation)return;
-  navigator.geolocation.getCurrentPosition(p=>{
-    picker.classList.remove('show');
-    loadLiveWind(p.coords.latitude,p.coords.longitude,'Your location','Your location',true)
-  },()=>{},{enableHighAccuracy:false,timeout:8000,maximumAge:600000})
+  return loadCachedWind(countrySelect.value,locationSelect.value)
 }
 
 summaryBtn.onclick=()=>{const open=detailCard.classList.toggle('show');summaryBtn.classList.toggle('open',open);if(!open)picker.classList.remove('show')};
 document.getElementById('detailClose').onclick=()=>{detailCard.classList.remove('show');summaryBtn.classList.remove('open');picker.classList.remove('show')};
 document.getElementById('changeLocationBtn').onclick=()=>picker.classList.toggle('show');
 countrySelect.onchange=populateLocations;
-document.getElementById('myLocationBtn').onclick=useBrowserLocation;
 document.getElementById('applyLocationBtn').onclick=()=>{
   const loc=selectedLocation();
   localStorage.setItem('windCountry',countrySelect.value);
