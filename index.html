@@ -19,9 +19,19 @@
     <div class="picker" id="picker"><div class="fieldLabel">Country</div><select id="countrySelect"></select><div class="fieldLabel">Location</div><select id="locationSelect"></select><div class="pickerButtons"><button id="myLocationBtn">◎ My location</button><button id="applyLocationBtn">Use location</button></div></div>
   </div>
   <div class="dots"><i class="on"></i><i></i><i></i></div>
+
+  <div class="mailOverlay" id="mailOverlay" aria-hidden="true">
+    <article class="mailPaper" id="mailPaper" role="dialog" aria-modal="true" aria-label="A letter for you">
+      <button class="mailClose" id="mailClose" aria-label="Close letter">×</button>
+      <div class="mailGreeting" id="mailGreeting">Dear You,</div>
+      <div class="mailBody" id="mailBody"></div>
+      <div class="mailClosing" id="mailClosing">Yours sincerely.</div>
+    </article>
+  </div>
 </div>
 <script src="wind-scene.js"></script>
-<script src="wind-nightfix.js"></script>
+<script src="wind-polish.js"></script>
+<script src="wind-mail.js"></script>
 <script src="wind-weather.js"></script>
 </body>
 </html>
