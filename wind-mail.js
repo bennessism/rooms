@@ -1,4 +1,4 @@
-let windMailMessages=[],windMailLast=-1,windMailPointer=null;
+let windMailMessages=[],windMailLast=-1,windMailPointer=null,windMailOpenedAt=0;
 const mailOverlay=document.getElementById('mailOverlay'),mailPaper=document.getElementById('mailPaper'),mailGreeting=document.getElementById('mailGreeting'),mailBody=document.getElementById('mailBody'),mailClosing=document.getElementById('mailClosing'),mailClose=document.getElementById('mailClose');
 
 fetch('messages.json',{cache:'no-store'})
@@ -17,6 +17,7 @@ function openWindMail(){
   mailGreeting.textContent=m.greeting||'Dear You,';
   mailBody.textContent=m.body||'';
   mailClosing.textContent=m.closing||'Yours sincerely.';
+  windMailOpenedAt=performance.now();
   mailOverlay.classList.add('show');mailOverlay.setAttribute('aria-hidden','false');
   requestAnimationFrame(()=>mailPaper.classList.add('show'));
 }
@@ -33,10 +34,17 @@ canvas.addEventListener('pointerdown',e=>{windMailPointer={x:e.clientX,y:e.clien
 canvas.addEventListener('pointerup',e=>{
   if(!windMailPointer)return;
   const moved=Math.hypot(e.clientX-windMailPointer.x,e.clientY-windMailPointer.y);windMailPointer=null;
-  if(moved<=10&&mailboxAt(e.clientX,e.clientY))openWindMail();
+  if(moved<=10&&mailboxAt(e.clientX,e.clientY)){
+    e.preventDefault();
+    e.stopPropagation();
+    openWindMail();
+  }
 });
 canvas.addEventListener('pointermove',e=>{if(mailboxAt(e.clientX,e.clientY))canvas.style.cursor='pointer';else canvas.style.cursor='default'});
 canvas.addEventListener('pointerleave',()=>{windMailPointer=null;canvas.style.cursor='default'});
-mailClose.addEventListener('click',closeWindMail);
-mailOverlay.addEventListener('click',e=>{if(e.target===mailOverlay)closeWindMail()});
+mailClose.addEventListener('click',e=>{e.stopPropagation();closeWindMail()});
+mailPaper.addEventListener('click',e=>e.stopPropagation());
+mailOverlay.addEventListener('click',e=>{
+  if(e.target===mailOverlay&&performance.now()-windMailOpenedAt>350)closeWindMail();
+});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&mailOverlay.classList.contains('show'))closeWindMail()});
