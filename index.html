@@ -26,6 +26,17 @@
   </div>
   <div class="dots"><i class="on"></i><i></i><i></i></div>
 
+  <div class="windDirDock">
+    <div class="windDirCard" id="windDirCard" aria-hidden="true">
+      <strong id="windDirToward">Toward --</strong>
+      <span id="windDirFrom">From --</span>
+    </div>
+    <button class="windDirBtn" id="windDirBtn" type="button" aria-label="Show wind direction" aria-expanded="false">
+      <span class="windDirNorth">N</span>
+      <span class="windDirArrow" id="windDirArrow">↑</span>
+    </button>
+  </div>
+
   <div class="mailOverlay" id="mailOverlay" aria-hidden="true">
     <article class="mailPaper" id="mailPaper" role="dialog" aria-modal="true" aria-label="A letter for you">
       <button class="mailClose" id="mailClose" aria-label="Close letter">×</button>
