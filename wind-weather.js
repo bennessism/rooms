@@ -1,5 +1,11 @@
 let weatherSourceMode='cache';
 
+const windDirBtn=document.getElementById('windDirBtn');
+const windDirCard=document.getElementById('windDirCard');
+const windDirArrow=document.getElementById('windDirArrow');
+const windDirToward=document.getElementById('windDirToward');
+const windDirFrom=document.getElementById('windDirFrom');
+
 async function loadCatalog(){
   try{
     catalog=await fetch('https://raw.githubusercontent.com/bennessism/window/main/weather/catalog.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error();return r.json()})
@@ -34,6 +40,16 @@ function labelFor(loc){return loc.city&&loc.city!==loc.name?`${loc.name} · ${lo
 function areaFor(loc){return loc.name||loc.city||'Location'}
 function fmtTime(iso){if(!iso)return'--';const m=String(iso).match(/T(\d{2}):(\d{2})/);if(!m)return'--';let h=Number(m[1]);const min=m[2],s=h>=12?'PM':'AM';h=h%12||12;return`${h}:${min} ${s}`}
 
+function refreshDirectionUI(){
+  const fromDeg=((Number(windDir)||0)%360+360)%360;
+  const towardDeg=(fromDeg+180)%360;
+  const fromName=compassName(fromDeg),towardName=compassName(towardDeg);
+  windDirArrow.style.transform=`translate(-50%,-45%) rotate(${towardDeg}deg)`;
+  windDirToward.textContent=`Toward ${towardName} · ${Math.round(towardDeg)}°`;
+  windDirFrom.textContent=`From ${fromName} · ${Math.round(fromDeg)}°`;
+  windDirBtn.setAttribute('aria-label',`Wind blowing toward ${towardName}, from ${fromName}`);
+}
+
 function refreshUI(updatedIso){
   const strength=windStrength(wind),dir=compassName(windDir);
   summaryLine.textContent=`${currentArea} · ${strength} · ${Math.round(wind)} km/h`;
@@ -43,7 +59,8 @@ function refreshUI(updatedIso){
   gustEl.textContent=Math.round(gust)+' km/h';
   fromText.textContent='From '+dir;
   directionEl.textContent=`${dir} · ${Math.round(windDir)}°`;
-  updatedEl.textContent='Updated '+fmtTime(updatedIso)
+  updatedEl.textContent='Updated '+fmtTime(updatedIso);
+  refreshDirectionUI()
 }
 
 function applyWindData(data,label,area){
@@ -80,9 +97,7 @@ async function loadCachedWind(countryCode=countrySelect.value,locationId=locatio
   }
 }
 
-function refreshCurrentWind(){
-  return loadCachedWind(countrySelect.value,locationSelect.value)
-}
+function refreshCurrentWind(){return loadCachedWind(countrySelect.value,locationSelect.value)}
 
 summaryBtn.onclick=()=>{const open=detailCard.classList.toggle('show');summaryBtn.classList.toggle('open',open);if(!open)picker.classList.remove('show')};
 document.getElementById('detailClose').onclick=()=>{detailCard.classList.remove('show');summaryBtn.classList.remove('open');picker.classList.remove('show')};
@@ -94,6 +109,12 @@ document.getElementById('applyLocationBtn').onclick=()=>{
   localStorage.setItem('windLocation',loc.id);
   picker.classList.remove('show');
   loadCachedWind(countrySelect.value,loc.id)
+};
+
+windDirBtn.onclick=()=>{
+  const open=windDirCard.classList.toggle('show');
+  windDirCard.setAttribute('aria-hidden',String(!open));
+  windDirBtn.setAttribute('aria-expanded',String(open));
 };
 
 scroller.addEventListener('scroll',()=>{if(innerWidth>700)return;const i=Math.max(0,Math.min(2,Math.round(scroller.scrollLeft/innerWidth)));document.querySelectorAll('.dots i').forEach((d,n)=>d.classList.toggle('on',n===i))},{passive:true});
