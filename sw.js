@@ -1,4 +1,4 @@
-const CACHE_NAME='wind-field-v1';
+const CACHE_NAME='wind-field-v2';
 const APP_SHELL=[
   './',
   './index.html',
